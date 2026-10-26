@@ -1819,7 +1819,7 @@ function startMusic(){
   bar();audio={c,master,timer:setInterval(bar,4000)};return true;
 }
 function stopMusic(){if(!audio)return;const a=audio;audio=null;clearInterval(a.timer);try{a.master.gain.linearRampToValueAtTime(0,a.c.currentTime+.5);setTimeout(()=>a.c.close(),700);}catch(e){}}
-$('#musicBtn').onclick=()=>{if(audio){stopMusic();$('#musicBtn').setAttribute('aria-pressed',false);}else if(startMusic())$('#musicBtn').setAttribute('aria-pressed',true);};
+$('#musicBtn').onclick=()=>{if(audio){stopMusic();$('#musicBtn').setAttribute('aria-pressed',false);store.set('voiceMute',1);if(window.stopVoice)stopVoice();}else if(startMusic()){$('#musicBtn').setAttribute('aria-pressed',true);store.set('voiceMute',0);}};
 function flashEnd(){if(S.flashEnd){const d=new Date(S.flashEnd);if(!isNaN(d))return d;}const d=new Date();d.setHours(23,59,59,0);return d;}
 let lastCd='';
 function tickFlash(){
@@ -2270,8 +2270,8 @@ function enterStore(){
 function say(text,ms){if(!keeperBub)return;setMap(keeperBub,drawBubble(text));clearTimeout(bubTimer);bubTimer=setTimeout(()=>setMap(keeperBub,drawBubble(lang==='en'?'Need help? Tap me':'সাহায্য লাগবে? আমাকে চাপুন')),ms||4000);}
 function speak(text){try{if(!S.voiceOn||!window.speechSynthesis)return;const vs=speechSynthesis.getVoices();const want=lang==='en'?/^en/i:/^bn/i;const v=vs.find(x=>want.test(x.lang));if(!v)return;
   const u=new SpeechSynthesisUtterance(text);u.voice=v;u.lang=v.lang;u.rate=.95;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
-function greet(){say(t('greet_bubble'),5000);waveT=2.2;speak(t('greet_voice'));}
-function onAdded(){waveT=2;say(t('thanks_bubble'),2800);}
+function greet(){say(t('greet_bubble'),5000);waveT=2.2;if(!playVoice('welcome',{daily:true}))speak(t('greet_voice'));}
+function onAdded(){waveT=2;say(t('thanks_bubble'),2800);playVoice('cart',{gap:8000});}
 
 /* ---------- উপরতলার সিঁড়ি ---------- */
 function buildStairs(){
@@ -3091,9 +3091,9 @@ function updateRoof(dt){if(!roofBulbs)return;
     waiter.position.set(x,ROOF.y,z);waiter.rotation.y=Math.atan2(nx-x,nz-z);const sw=Math.sin(u.t*40)*.45;u.legs[0].rotation.x=sw;u.legs[1].rotation.x=-sw;u.arms[0].rotation.x=-sw*.6;}}
 function setRoof(on){if(inRoof===on)return;inRoof=on;document.body.classList.toggle('roofmode',on);const b=$('#roofExit');if(b)b.hidden=!on;if(on)hideTags();}
 function goRoof(fromOutside){if(!webgl||!VIEWS||!VIEWS.roof)return;if(panelMode)closeProduct();
-  if(outside||fromOutside){const d=$('#doors');d.classList.add('open');setTimeout(()=>d.classList.add('gone'),600);goView('roof',false,3);setTimeout(()=>toast(LL(`${CAFE()}-এ স্বাগতম! ☕ ঘুরে দেখুন, নিচে নামতে বোতাম চাপুন।`,`Welcome to ${CAFE()}! ☕`)),3000);return;}
+  if(outside||fromOutside){const d=$('#doors');d.classList.add('open');setTimeout(()=>d.classList.add('gone'),600);playVoice('roof',{once:true});goView('roof',false,3);setTimeout(()=>toast(LL(`${CAFE()}-এ স্বাগতম! ☕ ঘুরে দেখুন, নিচে নামতে বোতাম চাপুন।`,`Welcome to ${CAFE()}! ☕`)),3000);return;}
   const f=$('#fade');$('#fadeTxt').textContent=CAFE()+' ☕';f.classList.add('on');
-  setTimeout(()=>{goView('roof',true);setTimeout(()=>f.classList.remove('on'),250);},reduced?10:380);}
+  setTimeout(()=>{goView('roof',true);playVoice('roof',{once:true});setTimeout(()=>f.classList.remove('on'),250);},reduced?10:380);}
 function leaveRoof(dest){dest=dest||'festive';if(dest!==room)switchRoom(dest);else{const f=$('#fade');$('#fadeTxt').textContent=roomName(room);f.classList.add('on');setTimeout(()=>{goView('overview',true);setTimeout(()=>f.classList.remove('on'),250);},reduced?10:380);}}
 function openKiosk(){const p=byId(dealId());
   openSheet(`<div class="center"><div style="font-size:54px;line-height:1">☕</div><h3 style="margin:0">${esc(CAFE())}</h3><p class="note" style="margin:0">${LL('একটু জিরিয়ে নিন। এখান থেকে পুরো রাস্তা দেখা যায়, রাতে বাতিগুলো জ্বলে ওঠে।','Take a break. You can see the whole street from here, and the lights glow at night.')}</p></div>
@@ -3154,7 +3154,7 @@ const crName=()=>S.creatorName||'জিসান ভাই';
 const crPhone=()=>cleanPhone(S.creatorPhone||'01303367051');
 const crWa=()=>{const x=crPhone();return /^01\d{9}$/.test(x)?'88'+x:x;};
 function crMsgUrl(){return `https://wa.me/${crWa()}?text=${encodeURIComponent(`আসসালামু আলাইকুম ${crName()}, আপনার বানানো ৩ডি শোরুমটা দেখে এসেছি। আমার ব্যবসার জন্যও এরকম কিছু চাই।`)}`;}
-function openCreator(){
+function openCreator(){playVoice('creator',{once:true});
   openSheet(`<div class="crhead"><img alt="" src="${CR_IMG.face}"><div><p class="note" style="margin:0">${LL('এই ৩ডি দোকানটা বানিয়েছেন','This 3D shop was made by')}</p><h3 style="margin:0">${esc(crName())}</h3><p class="note" style="margin:0">${esc(crTitle())}</p></div></div>
     <p style="margin:14px 0 8px;font-weight:600">${LL('আপনার ব্যবসার জন্যও এরকম কিছু চান? আমি বানিয়ে দিই:','Want something like this for your business? I make:')}</p>
     <div class="crlist">${CR_SERV.map(([e,b,en,sub])=>`<div><span>${e}</span><b>${LL(b,en)}</b><small>${esc(sub||'')}</small></div>`).join('')}</div>
@@ -3231,6 +3231,17 @@ function demoDoneHtml(){return `<div class="center demodone"><div style="font-si
   <button class="add crwa" data-dm="wa">💬 ${LL(`${esc(crName())}কে WhatsApp-এ মেসেজ দিন`,`Message ${esc(crName())} on WhatsApp`)}</button>
   <div class="bar" style="margin:0;justify-content:center"><button class="btn" data-dm="card">${LL('কী কী বানাই দেখুন','See what I make')}</button><button class="btn" data-dm="back">${LL('কার্টে ফিরে যান','Back to cart')}</button></div></div>`;}
 (function(){const on=!!S.demoMode;const t=$('#demoTag');if(t){t.hidden=!on;t.title='এটা একটা ডেমো ৩ডি দোকান';t.onclick=()=>openCreator();}const w=$('#demoWel');if(w)w.hidden=!on;})();
+
+/* ---------- জিসান ভাইয়ের কণ্ঠ ---------- */
+const VOICE={welcome:'img/voice-welcome.mp3',cart:'img/voice-cart.mp3',roof:'img/voice-roof.mp3',creator:'img/voice-creator.mp3'};
+let voiceEl=null;const voiceLast={},voiceSession={};
+function stopVoice(){if(voiceEl){try{voiceEl.pause();}catch(e){}voiceEl=null;}}
+function playVoice(k,o){o=o||{};if(!S.voiceOn||store.get('voiceMute',0)||!VOICE[k])return false;
+  const now=Date.now();if(o.gap&&voiceLast[k]&&now-voiceLast[k]<o.gap)return true;if(o.once&&voiceSession[k])return true;
+  if(o.daily){const d=todayKey();if(store.get('voice_'+k,'')===d)return true;store.set('voice_'+k,d);}
+  voiceLast[k]=now;voiceSession[k]=1;stopVoice();
+  try{const a=new Audio(VOICE[k]);a.volume=.9;voiceEl=a;const p=a.play();if(p&&p.catch)p.catch(()=>{});}catch(e){return false;}return true;}
+window.stopVoice=stopVoice;
 
 start();
 </script>
