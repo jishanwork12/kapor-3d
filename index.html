@@ -1819,7 +1819,7 @@ function startMusic(){
   bar();audio={c,master,timer:setInterval(bar,4000)};return true;
 }
 function stopMusic(){if(!audio)return;const a=audio;audio=null;clearInterval(a.timer);try{a.master.gain.linearRampToValueAtTime(0,a.c.currentTime+.5);setTimeout(()=>a.c.close(),700);}catch(e){}}
-$('#musicBtn').onclick=()=>{if(audio){stopMusic();$('#musicBtn').setAttribute('aria-pressed',false);store.set('voiceMute',1);if(window.stopVoice)stopVoice();}else if(startMusic()){$('#musicBtn').setAttribute('aria-pressed',true);store.set('voiceMute',0);}};
+$('#musicBtn').onclick=()=>{if(audio){stopMusic();$('#musicBtn').setAttribute('aria-pressed',false);}else if(startMusic()){$('#musicBtn').setAttribute('aria-pressed',true);}};
 function flashEnd(){if(S.flashEnd){const d=new Date(S.flashEnd);if(!isNaN(d))return d;}const d=new Date();d.setHours(23,59,59,0);return d;}
 let lastCd='';
 function tickFlash(){
@@ -2270,7 +2270,7 @@ function enterStore(){
 function say(text,ms){if(!keeperBub)return;setMap(keeperBub,drawBubble(text));clearTimeout(bubTimer);bubTimer=setTimeout(()=>setMap(keeperBub,drawBubble(lang==='en'?'Need help? Tap me':'সাহায্য লাগবে? আমাকে চাপুন')),ms||4000);}
 function speak(text){try{if(!S.voiceOn||!window.speechSynthesis)return;const vs=speechSynthesis.getVoices();const want=lang==='en'?/^en/i:/^bn/i;const v=vs.find(x=>want.test(x.lang));if(!v)return;
   const u=new SpeechSynthesisUtterance(text);u.voice=v;u.lang=v.lang;u.rate=.95;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
-function greet(){say(t('greet_bubble'),5000);waveT=2.2;if(!playVoice('welcome',{daily:true}))speak(t('greet_voice'));}
+function greet(){say(t('greet_bubble'),5000);waveT=2.2;if(!playVoice('welcome',{once:true}))speak(t('greet_voice'));}
 function onAdded(){waveT=2;say(t('thanks_bubble'),2800);playVoice('cart',{gap:8000});}
 
 /* ---------- উপরতলার সিঁড়ি ---------- */
@@ -3236,11 +3236,14 @@ function demoDoneHtml(){return `<div class="center demodone"><div style="font-si
 const VOICE={welcome:'img/voice-welcome.mp3',cart:'img/voice-cart.mp3',roof:'img/voice-roof.mp3',creator:'img/voice-creator.mp3'};
 let voiceEl=null;const voiceLast={},voiceSession={};
 function stopVoice(){if(voiceEl){try{voiceEl.pause();}catch(e){}voiceEl=null;}}
-function playVoice(k,o){o=o||{};if(!S.voiceOn||store.get('voiceMute',0)||!VOICE[k])return false;
+let voicePending=null;
+addEventListener('pointerdown',()=>{if(voicePending){const k=voicePending;voicePending=null;try{const a=new Audio(VOICE[k]);a.volume=.9;voiceEl=a;a.play().catch(()=>{});}catch(e){}}},true);
+function playVoice(k,o){o=o||{};if(S.voiceOn===false||!VOICE[k])return false;
   const now=Date.now();if(o.gap&&voiceLast[k]&&now-voiceLast[k]<o.gap)return true;if(o.once&&voiceSession[k])return true;
   if(o.daily){const d=todayKey();if(store.get('voice_'+k,'')===d)return true;store.set('voice_'+k,d);}
   voiceLast[k]=now;voiceSession[k]=1;stopVoice();
-  try{const a=new Audio(VOICE[k]);a.volume=.9;voiceEl=a;const p=a.play();if(p&&p.catch)p.catch(()=>{});}catch(e){return false;}return true;}
+  try{const a=new Audio(VOICE[k]);a.volume=.9;voiceEl=a;const p=a.play();if(p&&p.catch)p.catch(()=>{voicePending=k;});}catch(e){return false;}return true;}
+try{localStorage.removeItem('kapor-voiceMute');}catch(e){}
 window.stopVoice=stopVoice;
 
 start();
